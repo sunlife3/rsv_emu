@@ -3,8 +3,8 @@ pub mod components {
         return  *w_in1 + *w_in2;
     }
     
-    pub fn m_cmp(w_in1: &u32, w_in2: &u32) -> bool{
-        return *w_in1 == *w_in2;
+    pub fn m_cmp(w_in1: u32, w_in2: u32) -> bool{
+        return w_in1 == w_in2;
     }
     
     pub fn m_mux(w_in1: &u32, w_in2: &u32, w_s: &bool) -> u32 {
