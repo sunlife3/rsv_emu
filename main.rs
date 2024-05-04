@@ -1,23 +1,14 @@
 mod components;
+mod variables;
+mod procs;
 
-pub use components::components::{m_adder, m_am_imem, m_cmp, m_mux};
-
-struct Registers {
-    x1: u32,
-    r_pc: u32,
-}
-
-struct Flags {
-    // Actually, Variables in this struct are unnnecessary because electric curcuit detects these parameters automatically. 
-    clk_rising_edge: bool,
-}
+pub use components::components::*;
+use variables::{Registers, Flags};
+use procs::proc::proc1;
 
 fn main() {
     
-    let mut reg = Registers {
-        x1:3,
-        r_pc: 0,
-    };
+    let mut reg = Registers::new(3,0);
 
     let mut flags = Flags {
         clk_rising_edge: false,
@@ -32,13 +23,12 @@ fn main() {
         // ===============  Wires ONLY used in single stage =============================
         // Wires don't memorise, so wires have to be declared as local variable in loop.
         // (Clock signal is needed all stages, so is declared in out of loop.)
+        let rpc = reg.get_rpc();
         let mut w_npc: u32 = 0;
-        let mut w_ir: u32 = m_am_imem(&reg.r_pc); 
+        let mut w_ir: u32 = m_am_imem(&rpc); 
             //Initial instrucrtion is loaded when instruction memory is connected to PC circuit-wise.
         let mut w_rt: u32 = 0;
 
-        let cmp1;
-        let cmp2;
         let mut w_r1 = 0;
         let mut w_r2 = 0;
         //==============================================================================
@@ -61,14 +51,11 @@ fn main() {
 
             if w_clk {                
                 // Instruction Fetch
-                w_ir = m_am_imem(&reg.r_pc);
-                w_npc = m_adder(&test_imm, &reg.r_pc);
+                w_ir = m_am_imem(&rpc);
+                w_npc = m_adder(&test_imm, &rpc);
 
                 // Instruction Decode
-                cmp1 = m_cmp(0b00001, (w_ir >> 15) & 0b11111);
-                cmp2 = m_cmp(0b00001, (w_ir >> 20) & 0b11111);
-                w_r1 = m_mux(&0, &reg.x1, &cmp1);
-                w_r2 = m_mux(&0, &reg.x1, &cmp2);
+                (w_r1, w_r2) = proc1(&reg, &w_ir);
 
                 // Execute
                 w_rt = m_adder(&w_r1, &w_r2);
@@ -76,8 +63,8 @@ fn main() {
 
             if flags.clk_rising_edge {
                 // Register's value update 
-                reg.r_pc = w_npc;
-                reg.x1 = w_rt;
+                reg.set_rpc(w_npc);
+                reg.set_x1(w_rt);
                 
             }
 
