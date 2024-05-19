@@ -23,6 +23,7 @@ pub mod components {
         } else {
             return 0b00000000000100001000000010110011; //add x1, x1, x1
         }
-    }
+    }  
+   
 
 }
