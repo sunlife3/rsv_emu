@@ -15,8 +15,15 @@ struct Wires {
 
 
 fn main() {
-    
-    let mut reg = Registers::new(3,0);
+
+    // Initial value of resisters
+    let init_x: [u32; 32] = 
+        [0, 5, 6, 7, 8, 0, 0, 0, 0, 0, 
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+         0, 0];
+
+    let mut reg = Registers::new(init_x,0);
     let w_ir_init: u32 = m_am_imem(&reg.get_rpc()); 
     let mut wire = Wires{
         w_rt: 0,
@@ -78,24 +85,19 @@ fn main() {
                 ra2 = (wire.w_ir as usize >> 20) & 0b11111;
                 wa  = (wire.w_ir as usize >> 7) & 0b11111;
 
-                println!("1 [{}] w_rt={} (ra1={}, ra2={})", i, wire.w_rt, ra1, ra2);
                 (w_r1, w_r2) = reg.m_register_file(ra1, ra2, wa, true, &wire.w_rt);
-                println!("2 [{}] w_rt={}", i, wire.w_rt);
-
+                
                 // Execute
                 wire.w_rt = m_adder(&w_r1, &w_r2);
-                println!("3 [{}] w_rt={} (w_r1={}, w_r2={})\r\n\r\n", i, wire.w_rt, w_r1, w_r2);
-               
+                               
             }
 
             if flags.clk_rising_edge {
                 // Register's value update 
                 reg.set_rpc(w_npc);
                 reg.set_x(wire.w_rt, wa);
-            }
-
-            println!("{}, {}, {}, {}", i, w_r1, w_r2, wire.w_rt);
-            
+                println!("{}, {}, {}, {}", i, w_r1, w_r2, wire.w_rt);
+            }           
             wire.before_clk = wire.w_clk; 
         }
     }    

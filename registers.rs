@@ -8,13 +8,16 @@ struct GpRegister {
 }
 
 impl Registers {
-    pub fn new(init_x1:u32, init_rpc:u32) -> Registers{
+    pub fn new(init_x: [u32;32], init_rpc:u32) -> Registers{
         let mut gp_registers = Vec::new();
         for _i in 0..31 {
             gp_registers.push(GpRegister {reg_x: 0})
         }
         let r_pc = init_rpc;
-        gp_registers[1].reg_x = init_x1;
+        
+        for i in 0..(init_x.len()-1) {
+            gp_registers[i].reg_x = init_x[i];
+        }
 
         Registers {
             gp_registers,
