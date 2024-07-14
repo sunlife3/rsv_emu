@@ -4,7 +4,6 @@ mod procs;
 
 pub use components::components::*;
 use registers::{Registers, Flags};
-use procs::proc::proc1;
 
 struct Wires {
     w_rt: u32,
@@ -58,6 +57,7 @@ fn main() {
 
         let mut w_r1 = 0;
         let mut w_r2 = 0;
+        let mut w_s2 = 0;
         //==============================================================================
 
         if 150 < i {
@@ -85,10 +85,13 @@ fn main() {
                 ra2 = (wire.w_ir as usize >> 20) & 0b11111;
                 wa  = (wire.w_ir as usize >> 7) & 0b11111;
 
+                let (w_imm, insttype) = m_get_imm(wire.w_ir);
+                println!("imm:{}, inst:{:?}",w_imm,insttype);
                 (w_r1, w_r2) = reg.m_register_file(ra1, ra2, wa, true, &wire.w_rt);
-                
+                w_s2 = m_mux(&w_r2, &w_imm, &(insttype == InstType::I));
+
                 // Execute
-                wire.w_rt = m_adder(&w_r1, &w_r2);
+                wire.w_rt = m_adder(&w_r1, &w_s2);
                                
             }
 
@@ -96,7 +99,11 @@ fn main() {
                 // Register's value update 
                 reg.set_rpc(w_npc);
                 reg.set_x(wire.w_rt, wa);
-                println!("{}, {}, {}, {}", i, w_r1, w_r2, wire.w_rt);
+                println!("{}, {}, {}, {}", i, w_r1, w_s2, wire.w_rt);
+
+                if reg.get_x(30) != 0 {
+                    panic!(" value in x30 is not 0.");
+                }
             }           
             wire.before_clk = wire.w_clk; 
         }
