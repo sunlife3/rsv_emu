@@ -1,8 +1,12 @@
 mod components;
 mod registers;
 mod procs;
+mod memory;
 
 pub use components::components::*;
+pub use components::InstType;
+pub use memory::*;
+use memory::{Iram,Dram};
 use registers::{Registers, Flags};
 
 struct Wires {
@@ -12,18 +16,20 @@ struct Wires {
     before_clk: bool,
 } 
 
-
 fn main() {
+
+    let mut iram = Iram::new();
+    let mut dram = Dram::new();
 
     // Initial value of resisters
     let init_x: [u32; 32] = 
-        [0, 5, 6, 7, 8, 0, 0, 0, 0, 0, 
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
          0, 0];
 
     let mut reg = Registers::new(init_x,0);
-    let w_ir_init: u32 = m_am_imem(&reg.get_rpc()); 
+    let w_ir_init: u32 = iram.m_am_imem(&reg.get_rpc()); 
     let mut wire = Wires{
         w_rt: 0,
         w_ir: 0, 
@@ -33,12 +39,9 @@ fn main() {
     };
     wire.w_ir = w_ir_init;
 
-
     let mut flags = Flags {
         clk_rising_edge: false,
     };
-
-    
 
     let test_imm = 4;
 
@@ -76,7 +79,7 @@ fn main() {
 
             if wire.w_clk {                
                 // Instruction Fetch
-                wire.w_ir = m_am_imem(&rpc);
+                wire.w_ir = iram.m_am_imem(&rpc);
                 w_npc = m_adder(&test_imm, &rpc);
 
                 // Instruction Decode
@@ -85,13 +88,19 @@ fn main() {
                 ra2 = (wire.w_ir as usize >> 20) & 0b11111;
                 wa  = (wire.w_ir as usize >> 7) & 0b11111;
 
-                let (w_imm, insttype) = m_get_imm(wire.w_ir);
-                println!("imm:{}, inst:{:?}",w_imm,insttype);
-                (w_r1, w_r2) = reg.m_register_file(ra1, ra2, wa, true, &wire.w_rt);
-                w_s2 = m_mux(&w_r2, &w_imm, &(insttype == InstType::I));
+                let (w_imm, insttype, is_ld) = m_get_imm(wire.w_ir);
+                (w_r1, w_r2) = reg.m_register_file(ra1, ra2, wa, !(insttype == InstType::S), &wire.w_rt);
+                w_s2 = m_mux(&w_r2, &w_imm, !(insttype == InstType::R));
 
                 // Execute
-                wire.w_rt = m_adder(&w_r1, &w_s2);
+                let w_alu = m_adder(&w_r1, &w_s2);
+                //wire.w_rt = m_adder(&w_r1, &w_s2);
+
+                //Memory Access
+                let w_ldd = dram.m_am_dmem(&w_alu, insttype == InstType::S, &w_r2);
+
+                //Write Back
+                wire.w_rt = m_mux(&w_alu, &w_ldd, is_ld);
                                
             }
 
@@ -99,12 +108,12 @@ fn main() {
                 // Register's value update 
                 reg.set_rpc(w_npc);
                 reg.set_x(wire.w_rt, wa);
-                println!("{}, {}, {}, {}", i, w_r1, w_s2, wire.w_rt);
+                println!("display: {}, {}, {}, {}\n", i, w_r1, w_s2, wire.w_rt);
 
                 if reg.get_x(30) != 0 {
                     panic!(" value in x30 is not 0.");
                 }
-            }           
+            } 
             wire.before_clk = wire.w_clk; 
         }
     }    

@@ -1,15 +1,16 @@
+#[derive(Debug)]
+#[derive(PartialEq)]
+pub enum InstType {
+    J,
+    B,
+    S,
+    R,
+    U,
+    I,
+}
 
 pub mod components {
-    #[derive(Debug)]
-    #[derive(PartialEq)]
-    pub enum InstType {
-        J,
-        B,
-        S,
-        R,
-        U,
-        I,
-    }
+    use components::InstType;
     
     pub fn m_adder(w_in1: &u32, w_in2: &u32) -> u32{
         return  *w_in1 + *w_in2;
@@ -19,8 +20,8 @@ pub mod components {
         return w_in1 == w_in2;
     }
     
-    pub fn m_mux(w_in1: &u32, w_in2: &u32, w_s: &bool) -> u32 {
-        if *w_s {
+    pub fn m_mux(w_in1: &u32, w_in2: &u32, w_s: bool) -> u32 {
+        if w_s {
             return *w_in2;
         }else{
             return *w_in1;
@@ -39,7 +40,7 @@ pub mod components {
     
     }
 
-    pub fn m_get_imm(ir: u32) -> (u32, InstType){
+    pub fn m_get_imm(ir: u32) -> (u32, InstType, bool){
         let opecode = ir>>2 & 0b11111;
         let insttype = m_get_type(opecode);
     
@@ -69,37 +70,10 @@ pub mod components {
                 InstType::U =>((ir>>12)&0xfffff) << 12 | 0,
                 _ => 0
             };
+        
+        let ld = ((ir>>2)&0b11111) == 0;
     
-        (immediate, insttype)
+        (immediate, insttype, ld)
     }
-
-    pub fn m_am_imem(w_adr: &u32) -> u32 {
-        /*
-        if *w_adr == 0 {
-            return 0b00000000000100000000000010110011; //add x1, x0, x1
-        } else if *w_adr == 4 {
-            return 0b00000000000000001000000010110011; //add x1, x1, x0
-        } else {
-            return 0b00000000000100001000000010110011; //add x1, x1, x1
-        }
-         */
-        /*
-        if *w_adr == 0 {
-            return 0b00000000001000001000001010110011; //add x5, x1, x2
-        } else if *w_adr == 4 {
-            return 0b00000000010000011000001100110011; //add x6, x3, x4
-        } else {
-            return 0b00000000011000101000001110110011; //add x7, x5, x6
-                     0000000000110000000000001001101
-        }
-         */
-        if *w_adr == 0 { // 5-5
-            return 0b000000000011_00000_000_00001_0001101; //addi x1, x0, 3
-        } else if *w_adr == 4 {
-            return 0b000000000100_00001_000_00010_0001101; //addi x2, x1, 4
-        } else {
-            return 0b000000000101_00010_000_00011_0001101; //addi x3, x2, 5
-        }
-    }  
 
 }
