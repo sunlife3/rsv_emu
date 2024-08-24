@@ -43,7 +43,9 @@ impl Iram {
 
 
     pub fn m_am_imem(&mut self, w_pc: &u32) -> u32 {
-        let adr = w_pc>>2 & 0b111111;
+        //let adr = w_pc>>2 & 0b111111;
+        let adr = (w_pc>>2 & 0b111111)/4; // 1 word is 32bit  
+        //self.iram[adr as usize]
         //let w_insn = self.iram[adr as usize];
 
         /*
@@ -75,7 +77,7 @@ impl Iram {
             return 0b000000000101_00010_000_00011_0001101; //addi x3, x2, 5
         }
         */
-    
+        /*
         if *w_pc == 0 {
             // 5-6
             return 0b000000000111_00000_000_00001_0001101; //addi x1, x0, 7
@@ -83,6 +85,19 @@ impl Iram {
             return 0b0000000_00001_00000_010_01000_0100011; //sw x1, 8(x0)
         } else {
             return 0b000000001000_00000_010_00010_0000011; //lw x2, 8(x0)
+        }
+        */
+        if *w_pc == 0 {
+            // 5-7
+            return 0b000000000101_00000_000_00001_0001101; //addi x1, x0, 5
+        } else if *w_pc == 4 {
+            return 0b0000000_00001_00001_000_00010_0110011; //add x2, x1,x1
+        } else if *w_pc == 8 {
+            return 0b000000000001_00001_000_00001_0001101; //addi x1, x1, 1
+        }else if *w_pc == 12 {
+            return 0b1111111_00010_00001_001_11101_1100011; //bne x1,x2, L
+        }else {
+            return 0b000000001001_00001_000_01010_0001101; //addi x10,x1,9
         }
     }
     
