@@ -26,7 +26,7 @@ impl Dram {
 }
 
 pub struct Iram {
-    iram: Vec<u32>,
+    pub iram: Vec<u32>,
     size: u32,
 }
 
@@ -44,7 +44,9 @@ impl Iram {
 
     pub fn m_am_imem(&mut self, w_pc: &u32) -> u32 {
         //let adr = w_pc>>2 & 0b111111;
-        let adr = (w_pc>>2 & 0b111111)/4; // 1 word is 32bit  
+        let adr = w_pc/4; // 1 word is 32bit  
+        self.iram[adr as usize]
+
         //self.iram[adr as usize]
         //let w_insn = self.iram[adr as usize];
 
@@ -87,6 +89,7 @@ impl Iram {
             return 0b000000001000_00000_010_00010_0000011; //lw x2, 8(x0)
         }
         */
+        /*
         if *w_pc == 0 {
             // 5-7
             return 0b000000000101_00000_000_00001_0001101; //addi x1, x0, 5
@@ -99,6 +102,8 @@ impl Iram {
         }else {
             return 0b000000001001_00001_000_01010_0001101; //addi x10,x1,9
         }
+        */
+
     }
     
 }

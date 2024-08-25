@@ -14,9 +14,19 @@ fn main() {
 
     // ======================== Initial values ==============================
     let init_x: [u32; 32] = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0,
     ];
+/* 
+    iram.iram[0] = 0b00000000001000001000001010110011; //add x5, x1, x2
+    iram.iram[1] = 0b00000000010000011000001100110011; //add x6, x3, x4
+    iram.iram[2] = 0b00000000011000101000001110110011; //addi x1, x1, 1
+*/
+    iram.iram[0] = 0b000000000101_00000_000_00001_0001101; //addi x1, x0, 5
+    iram.iram[1] = 0b0000000_00001_00001_000_00010_0110011; //add x2, x1,x1
+    iram.iram[2] = 0b000000000001_00001_000_00001_0001101; //addi x1, x1, 1
+    iram.iram[3] = 0b1111111_00010_00001_001_11101_1100011; //bne x1,x2, L
+    iram.iram[4] = 0b000000001001_00001_000_01010_0001101; //addi x10,x1,9
 
     let mut reg = Registers::new(init_x, 0);
     let w_ir_init: u32 = iram.m_am_imem(&reg.get_rpc());
@@ -37,6 +47,12 @@ fn main() {
     ) = wire_init;
 
     w_ir = w_ir_init;
+
+    let (
+        // Pipeline register
+        mut P1_ir,
+        mut P1_pc 
+    ) = (0x13, 0);
 
     let mut flags = Flags {
         clk_rising_edge: false,
@@ -98,7 +114,7 @@ fn main() {
             (w_r1, w_r2) = reg.m_register_file(ra1, ra2, wa, !(insttype == Some(InstType::S)) && !(insttype == Some(InstType::B)), &w_rt);
             w_tpc = m_adder(&w_imm, &r_pc);
             w_s2 = m_mux(&w_r2, &w_imm, !(insttype == Some(InstType::R)) && !(insttype == Some(InstType::B)));
-            
+
             // Execute
             (w_alu, w_tkn) = m_alu(&w_r1, &w_s2);
 
@@ -106,12 +122,15 @@ fn main() {
             let w_ldd = dram.m_am_dmem(&w_alu, insttype == Some(InstType::S), &w_r2);
 
             //Write Back
+            // Register's value update
+            // All modules works with posedge in circuit, so output w_rt from EX/WB and setting it to reg[wa] in RF at same timing. 
+            // reg.set_x in this section is set to adapt this behavior.
+            // It's correction logical behavior of the program and circuit behavior.  
             w_rt = m_mux(&w_alu, &w_ldd, is_ld);
+            reg.set_x(w_rt, wa);
         }
 
-        if flags.clk_rising_edge {
-            // Register's value update
-            reg.set_x(w_rt, wa);
+        if flags.clk_rising_edge {            
             println!(
                 "<display> {}: {:8x}, {:8x}, {}, {}, {}\n",
                 i, r_pc, w_imm, w_r1, w_s2, w_rt
