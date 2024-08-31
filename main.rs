@@ -37,7 +37,7 @@ fn main() {
     let w_ir_init: u32 =0;
     let wire_init = (
         // wires used across the stage
-        0, 0, false, false, false, 0, 0, 0,
+        0, 0, false, false, false, 0, 0, 0, 0,
     );
     let (
         // wires used across the stage
@@ -49,6 +49,7 @@ fn main() {
         mut w_tpc,
         mut w_alu,
         mut w_npc,
+        mut r_pc
     ) = wire_init;
 
     w_ir = w_ir_init;
@@ -68,7 +69,6 @@ fn main() {
     for i in 1..10 {
         // ===============  Wires ONLY used in single stage =============================
         // Wires which don't be used across the stage.
-        let mut r_pc = 0;
         //Initial instrucrtion is loaded when instruction memory is connected to PC circuit-wise.
         let mut ra1: usize = 0;
         let mut ra2: usize = 0;
@@ -141,7 +141,7 @@ fn main() {
         if flags.clk_rising_edge {
             println!(
                 "<display> {}: {:8x}, {:8x}, {}, {}, {}\n",
-                i, reg.get_rpc(), p1_pc, w_r1, w_s2, w_rt
+                i, r_pc, p1_pc, w_r1, w_s2, w_rt
             );
 
             // Pipeline register
